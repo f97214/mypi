@@ -74,6 +74,16 @@ Installer alternative:
 curl -fsSL https://pi.dev/install.sh | sh
 ```
 
+On Windows, use the PowerShell installer:
+
+```powershell
+irm https://raw.githubusercontent.com/f97214/mypi/main/scripts/install.ps1 | iex
+```
+
+Running it without arguments shows an interactive menu. It also supports `-Version`, `-LocalPath` (install from local build artifacts), `-InstallDir` (defaults to `%LOCALAPPDATA%\Programs\pi`), and `-NoPath`.
+
+> Note: remote download requires release assets that this fork has not published yet — use npm or `-LocalPath` until then.
+
 Authenticate with an API key:
 
 ```bash

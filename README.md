@@ -35,6 +35,33 @@ To learn more about Pi:
 
 For Slack/chat automation and workflows see [earendil-works/pi-chat](https://github.com/earendil-works/pi-chat).
 
+## Quick Start
+
+Install the coding agent from npm:
+
+```bash
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+```
+
+`--ignore-scripts` disables dependency lifecycle scripts; pi does not require install scripts.
+
+On Windows, you can alternatively use the PowerShell installer:
+
+```powershell
+irm https://raw.githubusercontent.com/f97214/mypi/main/scripts/install.ps1 | iex
+```
+
+Run without arguments it shows an interactive menu; it also supports `-Version`, `-LocalPath` (install from local build output), `-InstallDir`, and `-NoPath`. Remote download requires release assets that this fork has not published yet — use npm or `-LocalPath` until then.
+
+Then start it from your project directory and authenticate with `/login`:
+
+```bash
+cd my-project
+pi
+```
+
+For the full first-run flow, see [packages/coding-agent/docs/quickstart.md](packages/coding-agent/docs/quickstart.md).
+
 ## Permissions & Containerization
 
 Pi does not include a built-in permission system for restricting filesystem, process, network, or credential access. By default, it runs with the permissions of the user and process that launched it.

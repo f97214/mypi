@@ -12,25 +12,25 @@ npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 `--ignore-scripts` disables dependency lifecycle scripts during install. Pi does not require install scripts for normal npm installs.
 
-### Uninstall
+On Windows, you can also install a standalone binary with the PowerShell installer:
 
-Use the package manager that installed pi. The curl installer uses npm globally, so curl and npm installs are removed with npm:
-
-```bash
-# curl installer or npm install -g
-npm uninstall -g @earendil-works/pi-coding-agent
-
-# pnpm
-pnpm remove -g @earendil-works/pi-coding-agent
-
-# Yarn
-yarn global remove @earendil-works/pi-coding-agent
-
-# Bun
-bun uninstall -g @earendil-works/pi-coding-agent
+```powershell
+irm https://raw.githubusercontent.com/f97214/mypi/main/scripts/install.ps1 | iex
 ```
 
-Uninstalling pi leaves settings, credentials, sessions, and installed pi packages in `~/.pi/agent/`.
+Run without arguments, the installer shows an interactive menu (latest GitHub release / specific version / local zip / local directory / build from source from a local repository checkout). You can also pass parameters:
+
+- `-LocalPath <path>` - install from a local build artifact produced by `scripts/build-binaries.sh`: either `pi-windows-x64.zip` or a `windows-x64/` directory.
+- `-InstallDir <path>` - custom install directory (default `%LOCALAPPDATA%\Programs\pi`).
+- `-NoPath` - skip PATH setup.
+
+Option 5 builds pi from a local repository checkout (requires Node.js, npm, and [bun](https://bun.sh)) into `packages/coding-agent/binaries/` and installs the result.
+
+### Open with MYPI from Explorer
+
+After installing, you can register an "Open with MYPI" Explorer context-menu entry for folders (pass `-ContextMenu` to install.ps1, or answer yes at the prompt after an interactive install). Right-clicking a folder or the empty space inside a folder then opens pi in that directory. Remove it with `-RemoveContextMenu`. The entry appears in the classic context menu — on Windows 11, use "Show more options" (Shift+F10).
+
+Note: this fork has not published any GitHub release yet, so remote download installs are unavailable until the first tag push triggers the build-binaries workflow. Until then, use npm or a local install (`-LocalPath`).
 
 Then start pi in the project directory you want it to work on:
 
@@ -155,6 +155,26 @@ pi -p @screenshot.png "What's in this image?"
 ```
 
 Use `--mode json` for JSON event output or `--mode rpc` for process integration.
+
+## Uninstall
+
+Use the package manager that installed pi. The curl installer uses npm globally, so curl and npm installs are removed with npm:
+
+```bash
+# curl installer or npm install -g
+npm uninstall -g @earendil-works/pi-coding-agent
+
+# pnpm
+pnpm remove -g @earendil-works/pi-coding-agent
+
+# Yarn
+yarn global remove @earendil-works/pi-coding-agent
+
+# Bun
+bun uninstall -g @earendil-works/pi-coding-agent
+```
+
+Uninstalling pi leaves settings, credentials, sessions, and installed pi packages in `~/.pi/agent/`.
 
 ## Next steps
 
