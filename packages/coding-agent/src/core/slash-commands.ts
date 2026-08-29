@@ -1,4 +1,3 @@
-import { APP_NAME } from "../config.ts";
 import type { SourceInfo } from "./source-info.ts";
 
 export type SlashCommandSource = "extension" | "prompt" | "skill";
@@ -38,6 +37,9 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "new", description: "Start a new session" },
 	{ name: "compact", description: "Manually compact the session context" },
 	{ name: "resume", description: "Resume a different session" },
-	{ name: "reload", description: "Reload keybindings, extensions, skills, prompts, themes, and context files" },
-	{ name: "quit", description: `Quit ${APP_NAME}` },
+	{
+		name: "reload",
+		description: "Reload keybindings, extensions, skills, prompts, themes, and context files",
+	},
+	{ name: "quit", description: "Quit {name}" },
 ];

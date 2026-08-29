@@ -5,6 +5,7 @@ import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
 import { parseFrontmatter } from "../utils/frontmatter.ts";
 import { canonicalizePath, resolvePath } from "../utils/paths.ts";
 import type { ResourceDiagnostic } from "./diagnostics.ts";
+import { t } from "./i18n.ts";
 import { createSyntheticSourceInfo, type SourceInfo } from "./source-info.ts";
 
 /** Max name length per spec */
@@ -93,19 +94,19 @@ function validateName(name: string): string[] {
 	const errors: string[] = [];
 
 	if (name.length > MAX_NAME_LENGTH) {
-		errors.push(`name exceeds ${MAX_NAME_LENGTH} characters (${name.length})`);
+		errors.push(t("name exceeds {max} characters ({length})", { max: MAX_NAME_LENGTH, length: name.length }));
 	}
 
 	if (!/^[a-z0-9-]+$/.test(name)) {
-		errors.push(`name contains invalid characters (must be lowercase a-z, 0-9, hyphens only)`);
+		errors.push(t("name contains invalid characters (must be lowercase a-z, 0-9, hyphens only)"));
 	}
 
 	if (name.startsWith("-") || name.endsWith("-")) {
-		errors.push(`name must not start or end with a hyphen`);
+		errors.push(t("name must not start or end with a hyphen"));
 	}
 
 	if (name.includes("--")) {
-		errors.push(`name must not contain consecutive hyphens`);
+		errors.push(t("name must not contain consecutive hyphens"));
 	}
 
 	return errors;
@@ -118,9 +119,14 @@ function validateDescription(description: unknown): string[] {
 	const errors: string[] = [];
 
 	if (typeof description !== "string" || description.trim() === "") {
-		errors.push("description is required");
+		errors.push(t("description is required"));
 	} else if (description.length > MAX_DESCRIPTION_LENGTH) {
-		errors.push(`description exceeds ${MAX_DESCRIPTION_LENGTH} characters (${description.length})`);
+		errors.push(
+			t("description exceeds {max} characters ({length})", {
+				max: MAX_DESCRIPTION_LENGTH,
+				length: description.length,
+			}),
+		);
 	}
 
 	return errors;
@@ -285,7 +291,7 @@ function loadSkillFromFile(
 	try {
 		rawContent = readFileSync(filePath, "utf-8");
 	} catch (error) {
-		const message = error instanceof Error ? error.message : "failed to read skill file";
+		const message = error instanceof Error ? error.message : t("failed to read skill file");
 		diagnostics.push({ type: "warning", message, path: filePath });
 		return { skill: null, diagnostics };
 	}
@@ -295,7 +301,7 @@ function loadSkillFromFile(
 		({ frontmatter } = parseFrontmatter<SkillFrontmatter>(rawContent));
 	} catch (error) {
 		if (isDeclaredSkill) {
-			const message = error instanceof Error ? error.message : "failed to parse skill file";
+			const message = error instanceof Error ? error.message : t("failed to parse skill file");
 			diagnostics.push({ type: "warning", message, path: filePath });
 		}
 		return { skill: null, diagnostics };
@@ -431,7 +437,7 @@ export function loadSkills(options: LoadSkillsOptions): LoadSkillsResult {
 			if (existing) {
 				collisionDiagnostics.push({
 					type: "collision",
-					message: `name "${skill.name}" collision`,
+					message: t('name "{name}" collision', { name: skill.name }),
 					path: skill.filePath,
 					collision: {
 						resourceType: "skill",
@@ -475,7 +481,7 @@ export function loadSkills(options: LoadSkillsOptions): LoadSkillsResult {
 	for (const rawPath of skillPaths) {
 		const resolvedPath = resolvePath(rawPath, resolvedCwd, { trim: true });
 		if (!existsSync(resolvedPath)) {
-			allDiagnostics.push({ type: "warning", message: "skill path does not exist", path: resolvedPath });
+			allDiagnostics.push({ type: "warning", message: t("skill path does not exist"), path: resolvedPath });
 			continue;
 		}
 
@@ -492,10 +498,14 @@ export function loadSkills(options: LoadSkillsOptions): LoadSkillsResult {
 					allDiagnostics.push(...result.diagnostics);
 				}
 			} else {
-				allDiagnostics.push({ type: "warning", message: "skill path is not a markdown file", path: resolvedPath });
+				allDiagnostics.push({
+					type: "warning",
+					message: t("skill path is not a markdown file"),
+					path: resolvedPath,
+				});
 			}
 		} catch (error) {
-			const message = error instanceof Error ? error.message : "failed to read skill path";
+			const message = error instanceof Error ? error.message : t("failed to read skill path");
 			allDiagnostics.push({ type: "warning", message, path: resolvedPath });
 		}
 	}

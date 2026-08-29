@@ -1,4 +1,5 @@
 import { CancellableLoader, Container, Loader, Spacer, Text, type TUI } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import type { Theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 import { keyHint } from "./keybinding-hints.ts";
@@ -33,7 +34,7 @@ export class BorderedLoader extends Container {
 		this.addChild(this.loader);
 		if (this.cancellable) {
 			this.addChild(new Spacer(1));
-			this.addChild(new Text(keyHint("tui.select.cancel", "cancel"), 1, 0));
+			this.addChild(new Text(keyHint("tui.select.cancel", t("cancel")), 1, 0));
 		}
 		this.addChild(new Spacer(1));
 		this.addChild(new DynamicBorder(borderColor));

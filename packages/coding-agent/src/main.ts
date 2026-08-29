@@ -5,8 +5,11 @@
  * createAgentSession() options. The SDK does the heavy lifting.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { type ImageContent, modelsAreEqual } from "@earendil-works/pi-ai";
+import { setTranslations } from "@earendil-works/pi-tui";
 import chalk from "chalk";
 import { type Args, type Mode, normalizeSessionName, parseArgs, printHelp } from "./cli/args.ts";
 import {
@@ -32,7 +35,15 @@ import { listModels } from "./cli/list-models.ts";
 import { createProjectTrustContext } from "./cli/project-trust.ts";
 import { selectSession } from "./cli/session-picker.ts";
 import { shouldRunFirstTimeSetup, showFirstTimeSetup, showStartupSelector } from "./cli/startup-ui.ts";
-import { APP_NAME, ENV_SESSION_DIR, expandTildePath, getAgentDir, getPackageDir, VERSION } from "./config.ts";
+import {
+	APP_NAME,
+	ENV_SESSION_DIR,
+	expandTildePath,
+	getAgentDir,
+	getPackageDir,
+	getSettingsPath,
+	VERSION,
+} from "./config.ts";
 import { type CreateAgentSessionRuntimeFactory, createAgentSessionRuntime } from "./core/agent-session-runtime.ts";
 import {
 	type AgentSessionRuntimeDiagnostic,
@@ -44,6 +55,7 @@ import { AuthStorage, ReadOnlyAuthStorage } from "./core/auth-storage.ts";
 import { exportFromFile } from "./core/export-html/index.ts";
 import type { InlineExtension } from "./core/extensions/types.ts";
 import { applyHttpProxySettings, configureHttpDispatcher } from "./core/http-dispatcher.ts";
+import { getTranslations, loadLocaleFile, setLocale, t } from "./core/i18n.ts";
 import { resolveCliModel, resolveModelScope, type ScopedModel } from "./core/model-resolver.ts";
 import { ModelRuntime } from "./core/model-runtime.ts";
 import { restoreStdout, takeOverStdout } from "./core/output-guard.ts";
@@ -66,9 +78,35 @@ import { InteractiveMode, runPrintMode, runRpcMode } from "./modes/index.ts";
 import { initTheme, stopThemeWatcher } from "./modes/interactive/theme/theme.ts";
 import { cleanupManagedInstall, handleConfigCommand, handlePackageCommand } from "./package-manager-cli.ts";
 import { isLocalPath, normalizePath, resolvePath } from "./utils/paths.ts";
+import { stripBom } from "./utils/text.ts";
 import { cleanupWindowsSelfUpdateQuarantine } from "./utils/windows-self-update.ts";
 
-const EXTENSION_LOAD_FAILURE_HINT = `Hint: Start without extensions using "${APP_NAME} -ne".`;
+let localeInitialized = false;
+
+function initializeLocale(): void {
+	if (localeInitialized) return;
+	localeInitialized = true;
+	const envLang = process.env.PI_LANG;
+	let locale = envLang && envLang.length > 0 ? envLang : undefined;
+	if (!locale) {
+		try {
+			const parsed: unknown = JSON.parse(stripBom(readFileSync(getSettingsPath(), "utf8")));
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				const language = (parsed as { language?: unknown }).language;
+				if (typeof language === "string" && language.length > 0) {
+					locale = language;
+				}
+			}
+		} catch {
+			locale = undefined;
+		}
+	}
+	setLocale(locale);
+	if (locale) {
+		loadLocaleFile(join(getAgentDir(), "locales", `${locale}.json`));
+		setTranslations(getTranslations(locale));
+	}
+}
 
 /**
  * Read all content from piped stdin.
@@ -96,7 +134,7 @@ async function readPipedStdin(): Promise<string | undefined> {
 function reportDiagnostics(diagnostics: readonly AgentSessionRuntimeDiagnostic[]): void {
 	for (const diagnostic of diagnostics) {
 		const color = diagnostic.type === "error" ? chalk.red : diagnostic.type === "warning" ? chalk.yellow : chalk.dim;
-		const prefix = diagnostic.type === "error" ? "Error: " : diagnostic.type === "warning" ? "Warning: " : "";
+		const prefix = diagnostic.type === "error" ? t("Error: ") : diagnostic.type === "warning" ? t("Warning: ") : "";
 		console.error(color(`${prefix}${diagnostic.message}`));
 	}
 }
@@ -137,8 +175,8 @@ async function runAuthCommand(args: string[]): Promise<boolean> {
 	try {
 		command = parseAuthCommand(args);
 	} catch (error) {
-		const message = error instanceof AuthCommandError ? error.message : "Failed to parse auth command";
-		console.error(chalk.red(`Error: ${message}`));
+		const message = error instanceof AuthCommandError ? error.message : t("Failed to parse auth command");
+		console.error(chalk.red(t("Error: {message}", { message })));
 		process.exitCode = 1;
 		return true;
 	}
@@ -147,8 +185,17 @@ async function runAuthCommand(args: string[]): Promise<boolean> {
 	const parsed = parseArgs(command.args);
 	if (parsed.unknownFlags.size > 0) {
 		const option = parsed.unknownFlags.keys().next().value;
-		console.error(chalk.red(`Unknown option --${option} for "${getAuthCommandName(command.kind)}".`));
-		console.error(chalk.dim(`Use "${APP_NAME} --help" or "${getAuthCommandUsage(command.kind)}".`));
+		console.error(
+			chalk.red(
+				t('Unknown option --{option} for "{command}".', {
+					option: option!,
+					command: getAuthCommandName(command.kind),
+				}),
+			),
+		);
+		console.error(
+			chalk.dim(t('Use "{app} --help" or "{usage}".', { app: APP_NAME, usage: getAuthCommandUsage(command.kind) })),
+		);
 		process.exitCode = 1;
 		return true;
 	}
@@ -198,8 +245,8 @@ async function runAuthCommand(args: string[]): Promise<boolean> {
 		process.stdout.write(`${output}\n`);
 		process.exitCode = result.status === "ready" ? 0 : result.status === "not_ready" ? 1 : 2;
 	} catch (error) {
-		const message = error instanceof AuthCommandError ? error.message : "Failed to resolve credential";
-		console.error(chalk.red(`Error: ${message}`));
+		const message = error instanceof AuthCommandError ? error.message : t("Failed to resolve credential");
+		console.error(chalk.red(t("Error: {message}", { message })));
 		process.exitCode = command.kind === "check" ? 2 : 1;
 	}
 	return true;
@@ -300,7 +347,9 @@ function validateForkFlags(parsed: Args): void {
 	].filter((flag): flag is string => flag !== undefined);
 
 	if (conflictingFlags.length > 0) {
-		console.error(chalk.red(`Error: --fork cannot be combined with ${conflictingFlags.join(", ")}`));
+		console.error(
+			chalk.red(t("Error: --fork cannot be combined with {flags}", { flags: conflictingFlags.join(", ") })),
+		);
 		process.exit(1);
 	}
 }
@@ -315,7 +364,9 @@ function validateSessionIdFlags(parsed: Args): void {
 	].filter((flag): flag is string => flag !== undefined);
 
 	if (conflictingFlags.length > 0) {
-		console.error(chalk.red(`Error: --session-id cannot be combined with ${conflictingFlags.join(", ")}`));
+		console.error(
+			chalk.red(t("Error: --session-id cannot be combined with {flags}", { flags: conflictingFlags.join(", ") })),
+		);
 		process.exit(1);
 	}
 
@@ -323,7 +374,7 @@ function validateSessionIdFlags(parsed: Args): void {
 		assertValidSessionId(parsed.sessionId);
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.error(chalk.red(`Error: ${message}`));
+		console.error(chalk.red(t("Error: {message}", { message })));
 		process.exit(1);
 	}
 }
@@ -333,7 +384,7 @@ function openSessionOrExit(path: string, sessionDir?: string): SessionManager {
 		return SessionManager.open(path, sessionDir);
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.error(chalk.red(`Error: ${message}`));
+		console.error(chalk.red(t("Error: {message}", { message })));
 		process.exit(1);
 	}
 }
@@ -343,7 +394,7 @@ function forkSessionOrExit(sourcePath: string, cwd: string, sessionDir?: string,
 		return SessionManager.forkFrom(sourcePath, cwd, sessionDir, { id: sessionId });
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.error(chalk.red(`Error: ${message}`));
+		console.error(chalk.red(t("Error: {message}", { message })));
 		process.exit(1);
 	}
 }
@@ -362,7 +413,7 @@ export async function createSessionManager(
 		if (parsed.sessionId) {
 			const existingTarget = await findLocalSessionByExactId(parsed.sessionId, cwd, sessionDir);
 			if (existingTarget) {
-				console.error(chalk.red(`Session already exists with id '${parsed.sessionId}'`));
+				console.error(chalk.red(t("Session already exists with id '{id}'", { id: parsed.sessionId })));
 				process.exit(1);
 			}
 		}
@@ -376,7 +427,7 @@ export async function createSessionManager(
 				return forkSessionOrExit(resolved.path, cwd, sessionDir, parsed.sessionId);
 
 			case "not_found":
-				console.error(chalk.red(`No session found matching '${resolved.arg}'`));
+				console.error(chalk.red(t("No session found matching '{arg}'", { arg: resolved.arg })));
 				process.exit(1);
 		}
 	}
@@ -390,17 +441,17 @@ export async function createSessionManager(
 				return openSessionOrExit(resolved.path, sessionDir);
 
 			case "global": {
-				console.log(chalk.yellow(`Session found in different project: ${resolved.cwd}`));
-				const shouldFork = await promptConfirm("Fork this session into current directory?");
+				console.log(chalk.yellow(t("Session found in different project: {cwd}", { cwd: resolved.cwd })));
+				const shouldFork = await promptConfirm(t("Fork this session into current directory?"));
 				if (!shouldFork) {
-					console.log(chalk.dim("Aborted."));
+					console.log(chalk.dim(t("Aborted.")));
 					process.exit(0);
 				}
 				return forkSessionOrExit(resolved.path, cwd, sessionDir);
 			}
 
 			case "not_found":
-				console.error(chalk.red(`No session found matching '${resolved.arg}'`));
+				console.error(chalk.red(t("No session found matching '{arg}'", { arg: resolved.arg })));
 				process.exit(1);
 		}
 	}
@@ -413,7 +464,7 @@ export async function createSessionManager(
 				settingsManager,
 			);
 			if (!selectedPath) {
-				console.log(chalk.dim("No session selected"));
+				console.log(chalk.dim(t("No session selected")));
 				process.exit(0);
 			}
 			return SessionManager.open(selectedPath, sessionDir);
@@ -433,7 +484,9 @@ export async function createSessionManager(
 		}
 		console.error(
 			chalk.yellow(
-				`Warning: No project session found with id '${parsed.sessionId}'; creating a new session with that id.`,
+				t("Warning: No project session found with id '{id}'; creating a new session with that id.", {
+					id: parsed.sessionId,
+				}),
 			),
 		);
 	}
@@ -548,8 +601,8 @@ async function promptForMissingSessionCwd(
 	settingsManager: SettingsManager,
 ): Promise<string | undefined> {
 	return showStartupSelector(settingsManager, formatMissingSessionCwdPrompt(issue), [
-		{ label: "Continue", value: issue.fallbackCwd },
-		{ label: "Cancel", value: undefined },
+		{ label: t("Continue"), value: issue.fallbackCwd },
+		{ label: t("Cancel"), value: undefined },
 	]);
 }
 
@@ -558,6 +611,7 @@ export interface MainOptions {
 }
 
 export async function main(args: string[], options?: MainOptions) {
+	initializeLocale();
 	resetTimings();
 	const extensionFactories = [...builtInExtensions, ...(options?.extensionFactories ?? [])];
 	const offlineMode = args.includes("--offline") || isTruthyEnvFlag(process.env.PI_OFFLINE);
@@ -602,7 +656,7 @@ export async function main(args: string[], options?: MainOptions) {
 	if (parsed.diagnostics.length > 0) {
 		for (const d of parsed.diagnostics) {
 			const color = d.type === "error" ? chalk.red : chalk.yellow;
-			console.error(color(`${d.type === "error" ? "Error" : "Warning"}: ${d.message}`));
+			console.error(color(`${d.type === "error" ? t("Error") : t("Warning")}: ${d.message}`));
 		}
 		if (parsed.diagnostics.some((d) => d.type === "error")) {
 			process.exit(1);
@@ -621,11 +675,11 @@ export async function main(args: string[], options?: MainOptions) {
 			const outputPath = parsed.messages.length > 0 ? parsed.messages[0] : undefined;
 			result = await exportFromFile(parsed.export, outputPath);
 		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : "Failed to export session";
-			console.error(chalk.red(`Error: ${message}`));
+			const message = error instanceof Error ? error.message : t("Failed to export session");
+			console.error(chalk.red(t("Error: {message}", { message })));
 			process.exit(1);
 		}
-		console.log(`Exported to: ${result}`);
+		console.log(t("Exported to: {path}", { path: result }));
 		process.exit(0);
 	}
 
@@ -636,7 +690,7 @@ export async function main(args: string[], options?: MainOptions) {
 	}
 
 	if (parsed.mode === "rpc" && parsed.fileArgs.length > 0) {
-		console.error(chalk.red("Error: @file arguments are not supported in RPC mode"));
+		console.error(chalk.red(t("Error: @file arguments are not supported in RPC mode")));
 		process.exit(1);
 	}
 
@@ -688,7 +742,7 @@ export async function main(args: string[], options?: MainOptions) {
 	if (parsed.name !== undefined) {
 		const name = normalizeSessionName(parsed.name);
 		if (name === undefined) {
-			console.error(chalk.red("Error: --name requires a non-empty value"));
+			console.error(chalk.red(t("Error: --name requires a non-empty value")));
 			process.exit(1);
 		}
 		sessionManager.appendSessionInfo(name);
@@ -779,7 +833,7 @@ export async function main(args: string[], options?: MainOptions) {
 			...collectSettingsDiagnostics(settingsManager),
 			...resourceLoader.getExtensions().errors.map(({ path, error }) => ({
 				type: "error" as const,
-				message: `Failed to load extension "${path}": ${error}`,
+				message: t('Failed to load extension "{path}": {error}', { path, error }),
 			})),
 		];
 
@@ -805,7 +859,7 @@ export async function main(args: string[], options?: MainOptions) {
 			if (!sessionOptions.model) {
 				diagnostics.push({
 					type: "error",
-					message: "--api-key requires a model to be specified via --model, --provider/--model, or --models",
+					message: t("--api-key requires a model to be specified via --model, --provider/--model, or --models"),
 				});
 			} else {
 				await modelRuntime.setRuntimeApiKey(sessionOptions.model.provider, parsed.apiKey);
@@ -895,7 +949,7 @@ export async function main(args: string[], options?: MainOptions) {
 	}
 	if (hasRuntimeErrors) {
 		if (runtime.diagnostics.some((diagnostic) => diagnostic.message.includes("Failed to load extension"))) {
-			console.error(chalk.yellow(EXTENSION_LOAD_FAILURE_HINT));
+			console.error(chalk.yellow(t('Hint: Start without extensions using "{app} -ne".', { app: APP_NAME })));
 		}
 		process.exit(1);
 	}
@@ -908,7 +962,7 @@ export async function main(args: string[], options?: MainOptions) {
 
 	const startupBenchmark = isTruthyEnvFlag(process.env.PI_STARTUP_BENCHMARK);
 	if (startupBenchmark && appMode !== "interactive") {
-		console.error(chalk.red("Error: PI_STARTUP_BENCHMARK only supports interactive mode"));
+		console.error(chalk.red(t("Error: PI_STARTUP_BENCHMARK only supports interactive mode")));
 		process.exit(1);
 	}
 

@@ -1294,6 +1294,20 @@ export interface ExtensionAPI {
 	/** Register a custom command. */
 	registerCommand(name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">): void;
 
+	/**
+	 * Register UI translations for a locale.
+	 * The dictionary maps English source strings (the same strings passed to
+	 * t(key)) to translated templates. Entries from later registrations win
+	 * over earlier ones; reloading the extension removes its entries first.
+	 *
+	 * @example
+	 * pi.registerTranslations("zh-TW", {
+	 * 	"to interrupt": "中斷",
+	 * 	"Updated to v{version}.": "已更新至 v{version}。",
+	 * });
+	 */
+	registerTranslations(locale: string, dict: Record<string, string>): void;
+
 	/** Register a keyboard shortcut. */
 	registerShortcut(
 		shortcut: KeyId,

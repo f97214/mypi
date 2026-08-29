@@ -5,6 +5,7 @@
 
 import { execSync, spawnSync } from "child_process";
 import { getShellConfig } from "../utils/shell.ts";
+import { t } from "./i18n.ts";
 
 // Cache for shell command results (persists for process lifetime)
 const commandResultCache = new Map<string, string | undefined>();
@@ -234,20 +235,35 @@ export function resolveConfigValueOrThrow(config: string, description: string, e
 
 	const reference = parseConfigValueReference(config);
 	if (reference.type === "command") {
-		throw new Error(`Failed to resolve ${description} from shell command: ${reference.config.slice(1)}`);
+		throw new Error(
+			t("Failed to resolve {description} from shell command: {command}", {
+				description,
+				command: reference.config.slice(1),
+			}),
+		);
 	}
 
 	if (reference.type === "template") {
 		const missingEnvVars = getMissingConfigValueEnvVarNames(config, env);
 		if (missingEnvVars.length === 1) {
-			throw new Error(`Failed to resolve ${description} from environment variable: ${missingEnvVars[0]}`);
+			throw new Error(
+				t("Failed to resolve {description} from environment variable: {name}", {
+					description,
+					name: missingEnvVars[0] ?? "",
+				}),
+			);
 		}
 		if (missingEnvVars.length > 1) {
-			throw new Error(`Failed to resolve ${description} from environment variables: ${missingEnvVars.join(", ")}`);
+			throw new Error(
+				t("Failed to resolve {description} from environment variables: {names}", {
+					description,
+					names: missingEnvVars.join(", "),
+				}),
+			);
 		}
 	}
 
-	throw new Error(`Failed to resolve ${description}`);
+	throw new Error(t("Failed to resolve {description}", { description }));
 }
 
 /**

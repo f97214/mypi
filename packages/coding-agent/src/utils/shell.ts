@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { delimiter } from "node:path";
 import { spawn, spawnSync } from "child_process";
 import { getBinDir } from "../config.ts";
+import { t } from "../core/i18n.ts";
 
 export interface ShellConfig {
 	shell: string;
@@ -70,7 +71,7 @@ export function getShellConfig(customShellPath?: string): ShellConfig {
 		if (existsSync(customShellPath)) {
 			return getBashShellConfig(customShellPath);
 		}
-		throw new Error(`Custom shell path not found: ${customShellPath}`);
+		throw new Error(t("Custom shell path not found: {path}", { path: customShellPath }));
 	}
 
 	if (process.platform === "win32") {
@@ -98,11 +99,14 @@ export function getShellConfig(customShellPath?: string): ShellConfig {
 		}
 
 		throw new Error(
-			`No bash shell found. Options:\n` +
-				`  1. Install Git for Windows: https://git-scm.com/download/win\n` +
-				`  2. Add your bash to PATH (Cygwin, MSYS2, etc.)\n` +
-				"  3. Set shellPath in settings.json\n\n" +
-				`Searched Git Bash in:\n${paths.map((p) => `  ${p}`).join("\n")}`,
+			t(
+				`No bash shell found. Options:\n` +
+					`  1. Install Git for Windows: https://git-scm.com/download/win\n` +
+					`  2. Add your bash to PATH (Cygwin, MSYS2, etc.)\n` +
+					"  3. Set shellPath in settings.json\n\n" +
+					"Searched Git Bash in:\n{paths}",
+				{ paths: paths.map((p) => `  ${p}`).join("\n") },
+			),
 		);
 	}
 
@@ -124,12 +128,12 @@ export const POWERSHELL_ARGS = ["-NoProfile", "-NonInteractive", "-ExecutionPoli
 /** Resolve PowerShell on Windows, preferring PowerShell 7 when available. */
 export function getPowerShellConfig(): ShellConfig {
 	if (process.platform !== "win32") {
-		throw new Error("The powershell tool is only available on Windows.");
+		throw new Error(t("The powershell tool is only available on Windows."));
 	}
 
 	const shell = findExecutableOnPath("pwsh.exe") ?? findExecutableOnPath("powershell.exe");
 	if (!shell) {
-		throw new Error("No PowerShell executable found. Install PowerShell or add powershell.exe/pwsh.exe to PATH.");
+		throw new Error(t("No PowerShell executable found. Install PowerShell or add powershell.exe/pwsh.exe to PATH."));
 	}
 
 	return { shell, args: [...POWERSHELL_ARGS] };

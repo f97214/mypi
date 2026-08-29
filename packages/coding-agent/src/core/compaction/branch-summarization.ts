@@ -9,6 +9,7 @@ import type { AgentMessage, StreamFn } from "@earendil-works/pi-agent-core";
 import type { RetryCallbacks, RetryPolicy } from "@earendil-works/pi-ai";
 import { contentText } from "@earendil-works/pi-ai";
 import type { Model, SimpleStreamOptions, Usage } from "@earendil-works/pi-ai/compat";
+import { t } from "../i18n.ts";
 import {
 	convertToLlm,
 	createBranchSummaryMessage,
@@ -315,7 +316,7 @@ export async function generateBranchSummary(
 	const { messages, fileOps } = prepareBranchEntries(entries, tokenBudget);
 
 	if (messages.length === 0) {
-		return { summary: "No content to summarize" };
+		return { summary: t("No content to summarize") };
 	}
 
 	// Transform to LLM-compatible messages, then serialize to text
@@ -359,7 +360,7 @@ export async function generateBranchSummary(
 		return { error: failure };
 	}
 	if (response.content.some((block) => block.type === "toolCall")) {
-		return { error: "Branch summarization attempted to call a tool" };
+		return { error: t("Branch summarization attempted to call a tool") };
 	}
 
 	let summary = contentText(response.content);
@@ -372,7 +373,7 @@ export async function generateBranchSummary(
 	summary += formatFileOperations(readFiles, modifiedFiles);
 
 	return {
-		summary: summary || "No summary generated",
+		summary: summary || t("No summary generated"),
 		usage: response.usage,
 		readFiles,
 		modifiedFiles,

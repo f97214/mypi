@@ -9,6 +9,7 @@ import type { AgentMessage, StreamFn, ThinkingLevel } from "@earendil-works/pi-a
 import { contentText, type RetryCallbacks, type RetryPolicy, retryAssistantCall, uuidv7 } from "@earendil-works/pi-ai";
 import type { AssistantMessage, Context, Model, SimpleStreamOptions, Usage } from "@earendil-works/pi-ai/compat";
 import { completeSimple } from "@earendil-works/pi-ai/compat";
+import { t } from "../i18n.ts";
 import { convertToLlm } from "../messages.ts";
 import {
 	buildSessionContext,
@@ -544,10 +545,10 @@ ${UPDATE_SUMMARIZATION_INSTRUCTIONS}`;
  */
 export function getSummarizationFailure(response: AssistantMessage, label: string): string | undefined {
 	if (response.stopReason === "error") {
-		return `${label} failed: ${response.errorMessage || "Unknown error"}`;
+		return t("{label} failed: {error}", { label, error: response.errorMessage || "Unknown error" });
 	}
 	if (response.stopReason === "length") {
-		return `${label} failed: generation hit the token cap and the summary is incomplete`;
+		return t("{label} failed: generation hit the token cap and the summary is incomplete", { label });
 	}
 	return undefined;
 }
@@ -718,7 +719,7 @@ export async function generateSummaryWithUsage(
 		throw new Error(failure);
 	}
 	if (response.content.some((block) => block.type === "toolCall")) {
-		throw new Error("Summarization attempted to call a tool");
+		throw new Error(t("Summarization attempted to call a tool"));
 	}
 
 	const textContent = contentText(response.content);
@@ -1003,7 +1004,7 @@ async function generateTurnPrefixSummary(
 		throw new Error(failure);
 	}
 	if (response.content.some((block) => block.type === "toolCall")) {
-		throw new Error("Turn prefix summarization attempted to call a tool");
+		throw new Error(t("Turn prefix summarization attempted to call a tool"));
 	}
 
 	return {

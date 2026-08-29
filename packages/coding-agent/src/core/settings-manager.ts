@@ -139,6 +139,7 @@ export interface Settings {
 	tuiMode?: TuiMode; // default: "regular"
 	fullscreenExitOutput?: FullscreenExitOutput; // default: "transcript"; no effect in regular TUI mode
 	fullscreenScrollbar?: ScrollViewScrollbar; // default: "auto"; no effect in regular TUI mode
+	language?: string; // UI language (e.g. "English", "zh-TW"); undefined means English default
 }
 
 function isMergeableObject(value: unknown): value is Record<string, unknown> {
@@ -1332,6 +1333,17 @@ export class SettingsManager {
 		this.globalSettings.markdown ??= {};
 		this.globalSettings.markdown.mermaid = mode;
 		this.markModified("markdown", "mermaid");
+		this.save();
+	}
+
+	getLanguage(): string | undefined {
+		const language = this.settings.language;
+		return typeof language === "string" && language.length > 0 ? language : undefined;
+	}
+
+	setLanguage(value: string | undefined): void {
+		this.globalSettings.language = value;
+		this.markModified("language");
 		this.save();
 	}
 

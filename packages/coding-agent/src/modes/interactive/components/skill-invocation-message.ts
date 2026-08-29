@@ -1,5 +1,6 @@
 import { Box, Markdown, type MarkdownTheme, Text } from "@earendil-works/pi-tui";
 import type { ParsedSkillBlock } from "../../../core/agent-session.ts";
+import { t } from "../../../core/i18n.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { keyText } from "./keybinding-hints.ts";
 
@@ -35,7 +36,7 @@ export class SkillInvocationMessageComponent extends Box {
 
 		if (this.expanded) {
 			// Expanded: label + skill name header + full content
-			const label = theme.fg("customMessageLabel", `\x1b[1m[skill]\x1b[22m`);
+			const label = theme.fg("customMessageLabel", `\x1b[1m${t("[skill]")}\x1b[22m`);
 			this.addChild(new Text(label, 0, 0));
 			const header = `**${this.skillBlock.name}**\n\n`;
 			this.addChild(
@@ -46,9 +47,9 @@ export class SkillInvocationMessageComponent extends Box {
 		} else {
 			// Collapsed: single line - [skill] name (hint to expand)
 			const line =
-				theme.fg("customMessageLabel", `\x1b[1m[skill]\x1b[22m `) +
+				theme.fg("customMessageLabel", `\x1b[1m${t("[skill]")}\x1b[22m `) +
 				theme.fg("customMessageText", this.skillBlock.name) +
-				theme.fg("dim", ` (${keyText("app.tools.expand")} to expand)`);
+				theme.fg("dim", t(" ({key} to expand)", { key: keyText("app.tools.expand") }));
 			this.addChild(new Text(line, 0, 0));
 		}
 	}

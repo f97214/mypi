@@ -1,4 +1,5 @@
 import { Box, Markdown, type MarkdownTheme, Spacer, Text } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import type { CompactionSummaryMessage } from "../../../core/messages.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { keyText } from "./keybinding-hints.ts";
@@ -33,12 +34,12 @@ export class CompactionSummaryMessageComponent extends Box {
 		this.clear();
 
 		const tokenStr = this.message.tokensBefore.toLocaleString();
-		const label = theme.fg("customMessageLabel", `\x1b[1m[compaction]\x1b[22m`);
+		const label = theme.fg("customMessageLabel", `\x1b[1m${t("[compaction]")}\x1b[22m`);
 		this.addChild(new Text(label, 0, 0));
 		this.addChild(new Spacer(1));
 
 		if (this.expanded) {
-			const header = `**Compacted from ${tokenStr} tokens**\n\n`;
+			const header = `${t("**Compacted from {tokens} tokens**", { tokens: tokenStr })}\n\n`;
 			this.addChild(
 				new Markdown(header + this.message.summary, 0, 0, this.markdownTheme, {
 					color: (text: string) => theme.fg("customMessageText", text),
@@ -47,9 +48,9 @@ export class CompactionSummaryMessageComponent extends Box {
 		} else {
 			this.addChild(
 				new Text(
-					theme.fg("customMessageText", `Compacted from ${tokenStr} tokens (`) +
+					theme.fg("customMessageText", t("Compacted from {tokens} tokens (", { tokens: tokenStr })) +
 						theme.fg("dim", keyText("app.tools.expand")) +
-						theme.fg("customMessageText", " to expand)"),
+						theme.fg("customMessageText", t(" to expand)")),
 					0,
 					0,
 				),

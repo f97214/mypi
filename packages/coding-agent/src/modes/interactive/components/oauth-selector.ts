@@ -8,6 +8,7 @@ import {
 	Spacer,
 	TruncatedText,
 } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import { theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 
@@ -20,7 +21,7 @@ export type AuthSelectorProvider = {
 };
 
 export function formatAuthSelectorProviderType(authType: AuthSelectorProvider["authType"]): string {
-	return authType === "oauth" ? "subscription" : "API key";
+	return authType === "oauth" ? t("subscription") : t("API key");
 }
 
 /**
@@ -69,7 +70,7 @@ export class OAuthSelectorComponent extends Container implements Focusable {
 		this.addChild(new Spacer(1));
 
 		// Add title
-		const title = mode === "login" ? "Select provider to configure:" : "Select provider to logout:";
+		const title = mode === "login" ? t("Select provider to configure:") : t("Select provider to logout:");
 		this.addChild(new TruncatedText(theme.fg("accent", theme.bold(title)), 1, 0));
 		this.addChild(new Spacer(1));
 
@@ -154,17 +155,17 @@ export class OAuthSelectorComponent extends Container implements Focusable {
 			const message =
 				this.allProviders.length === 0
 					? this.mode === "login"
-						? "No providers available"
-						: "No providers logged in. Use /login first."
-					: "No matching providers";
+						? t("No providers available")
+						: t("No providers logged in. Use /login first.")
+					: t("No matching providers");
 			this.listContainer.addChild(new TruncatedText(theme.fg("muted", `  ${message}`), 1, 0));
 		}
 	}
 
 	private formatStatusIndicator(provider: AuthSelectorProvider): string {
-		if (!provider.status) return theme.fg("muted", " • unconfigured");
+		if (!provider.status) return theme.fg("muted", t(" • unconfigured"));
 		if (provider.status.type !== provider.authType) {
-			const label = provider.status.type === "oauth" ? "subscription configured" : "API key configured";
+			const label = provider.status.type === "oauth" ? t("subscription configured") : t("API key configured");
 			return theme.fg("muted", " • ") + theme.fg("warning", label);
 		}
 		if (
@@ -172,7 +173,7 @@ export class OAuthSelectorComponent extends Container implements Focusable {
 			provider.status.source === "OAuth" ||
 			provider.status.source === "stored credential"
 		) {
-			return theme.fg("success", " ✓ configured");
+			return theme.fg("success", t(" ✓ configured"));
 		}
 		const source = /^[A-Z][A-Z0-9_]*(?:, [A-Z][A-Z0-9_]*)*$/.test(provider.status.source)
 			? `env: ${provider.status.source}`

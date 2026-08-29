@@ -214,6 +214,16 @@ export interface KeybindingConflict {
 	keybindings: string[];
 }
 
+let descriptionTranslations: Record<string, string> = {};
+
+/**
+ * Inject translated keybinding descriptions (keyed by the English source text).
+ * Descriptions without an entry fall back to English.
+ */
+export function setTranslations(dict: Record<string, string>): void {
+	descriptionTranslations = dict;
+}
+
 function normalizeKeys(keys: KeyId | KeyId[] | undefined): KeyId[] {
 	if (keys === undefined) return [];
 	const keyList = Array.isArray(keys) ? keys : [keys];
@@ -280,7 +290,10 @@ export class KeybindingsManager {
 	}
 
 	getDefinition(keybinding: Keybinding): KeybindingDefinition {
-		return this.definitions[keybinding];
+		const definition = this.definitions[keybinding];
+		if (definition.description === undefined) return definition;
+		const translated = descriptionTranslations[definition.description];
+		return translated === undefined ? definition : { ...definition, description: translated };
 	}
 
 	getConflicts(): KeybindingConflict[] {

@@ -29,6 +29,7 @@ import { resolvePath } from "../../utils/paths.ts";
 import { createEventBus, type EventBus } from "../event-bus.ts";
 import type { ExecOptions } from "../exec.ts";
 import { execCommand } from "../exec.ts";
+import { clearExtensionTranslations, registerTranslations as registerI18nTranslations } from "../i18n.ts";
 import { readPiManifest } from "../pi-manifest.ts";
 import { createSyntheticSourceInfo } from "../source-info.ts";
 import { time } from "../timings.ts";
@@ -302,6 +303,11 @@ function createExtensionAPI(
 				sourceInfo: extension.sourceInfo,
 				...options,
 			});
+		},
+
+		registerTranslations(locale: string, dict: Record<string, string>): void {
+			assertActive();
+			registerI18nTranslations(locale, dict);
 		},
 
 		registerShortcut(
@@ -618,6 +624,7 @@ async function loadExtensionsInternal(
 	const resolvedCwd = cacheToken?.cwd ?? resolvePath(cwd);
 	const resolvedEventBus = eventBus ?? createEventBus();
 	const resolvedRuntime = runtime ?? createExtensionRuntime();
+	clearExtensionTranslations();
 
 	for (const extPath of paths) {
 		const { extension, error } = await loadExtension(

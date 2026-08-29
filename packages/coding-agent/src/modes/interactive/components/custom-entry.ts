@@ -1,6 +1,7 @@
 import type { Component } from "@earendil-works/pi-tui";
 import { Box, Container, Spacer, Text } from "@earendil-works/pi-tui";
 import type { EntryRenderer } from "../../../core/extensions/types.ts";
+import { t } from "../../../core/i18n.ts";
 import type { CustomEntry } from "../../../core/session-manager.ts";
 import { theme } from "../theme/theme.ts";
 
@@ -47,7 +48,13 @@ export class CustomEntryComponent extends Container {
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
-			box.addChild(new Text(theme.fg("error", `[${this.entry.customType}] renderer failed: ${message}`), 0, 0));
+			box.addChild(
+				new Text(
+					theme.fg("error", t("[{type}] renderer failed: {message}", { type: this.entry.customType, message })),
+					0,
+					0,
+				),
+			);
 			component = box;
 		}
 

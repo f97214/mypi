@@ -57,6 +57,7 @@ export {
 	type KeybindingsConfig,
 	KeybindingsManager,
 	setKeybindings,
+	setTranslations,
 	TUI_KEYBINDINGS,
 } from "./keybindings.ts";
 // Keyboard input handling

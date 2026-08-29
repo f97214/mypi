@@ -6,6 +6,7 @@ import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import chalk from "chalk";
 import { APP_NAME, CONFIG_DIR_NAME, ENV_AGENT_DIR, ENV_SESSION_DIR } from "../config.ts";
 import type { ExtensionFlag } from "../core/extensions/types.ts";
+import { t } from "../core/i18n.ts";
 import type { TuiMode } from "../core/settings-manager.ts";
 
 export type Mode = "text" | "json" | "rpc";
@@ -116,7 +117,7 @@ export function parseArgs(args: string[]): Args {
 			if (i + 1 < args.length) {
 				result.name = args[++i];
 			} else {
-				result.diagnostics.push({ type: "error", message: "--name requires a value" });
+				result.diagnostics.push({ type: "error", message: t("--name requires a value") });
 			}
 		} else if (arg === "--no-session") {
 			result.noSession = true;
@@ -151,7 +152,10 @@ export function parseArgs(args: string[]): Args {
 			} else {
 				result.diagnostics.push({
 					type: "warning",
-					message: `Invalid thinking level "${level}". Valid values: ${VALID_THINKING_LEVELS.join(", ")}`,
+					message: t(`Invalid thinking level "{level}". Valid values: {values}`, {
+						level,
+						values: VALID_THINKING_LEVELS.join(", "),
+					}),
 				});
 			}
 		} else if (arg === "--print" || arg === "-p") {
@@ -180,7 +184,7 @@ export function parseArgs(args: string[]): Args {
 		} else if (arg === "--use-theme") {
 			const themeName = args[i + 1];
 			if (themeName === undefined || themeName.startsWith("-")) {
-				result.diagnostics.push({ type: "error", message: "--use-theme requires a theme name" });
+				result.diagnostics.push({ type: "error", message: t("--use-theme requires a theme name") });
 			} else {
 				result.useTheme = themeName;
 				i++;
@@ -206,12 +210,12 @@ export function parseArgs(args: string[]): Args {
 				result.tuiMode = mode;
 				i++;
 			} else if (mode === undefined || mode.startsWith("-")) {
-				result.diagnostics.push({ type: "error", message: "--tui-mode requires regular or fullscreen" });
+				result.diagnostics.push({ type: "error", message: t("--tui-mode requires regular or fullscreen") });
 			} else {
 				i++;
 				result.diagnostics.push({
 					type: "error",
-					message: `Invalid TUI mode "${mode}". Valid values: regular, fullscreen`,
+					message: t(`Invalid TUI mode "{mode}". Valid values: regular, fullscreen`, { mode }),
 				});
 			}
 		} else if (arg === "--verbose") {
@@ -239,7 +243,7 @@ export function parseArgs(args: string[]): Args {
 				}
 			}
 		} else if (arg.startsWith("-") && !arg.startsWith("--")) {
-			result.diagnostics.push({ type: "error", message: `Unknown option: ${arg}` });
+			result.diagnostics.push({ type: "error", message: t(`Unknown option: {arg}`, { arg }) });
 		} else if (!arg.startsWith("-")) {
 			result.messages.push(arg);
 		}
@@ -259,23 +263,30 @@ export function printHelp(extensionFlags?: ExtensionFlag[]): void {
 					})
 					.join("\n")}\n`
 			: "";
-	console.log(`${chalk.bold(APP_NAME)} - AI coding assistant with read, bash, edit, write tools
+	console.log(`${chalk.bold(APP_NAME)} - ${t(
+		`AI coding assistant with read, bash, edit, write tools
 
-${chalk.bold("Usage:")}
-  ${APP_NAME} [options] [--] [@files...] [messages...]
+{usage}
+  {app} [options] [--] [@files...] [messages...]
 
-${chalk.bold("Commands:")}
-  ${APP_NAME} install <source> [-l]     Install extension source and add to settings
-  ${APP_NAME} remove <source> [-l]      Remove extension source from settings
-  ${APP_NAME} uninstall <source> [-l]   Alias for remove
-  ${APP_NAME} update [source|self|pi]   Update pi, extensions, or model catalogs
-  ${APP_NAME} list                      List installed extensions from settings
-  ${APP_NAME} config [-l]               Open TUI to enable/disable package resources (Tab switches scope)
-  ${APP_NAME} auth <command>            Print credentials or check provider readiness
-  ${APP_NAME} <command> --help          Show help for install/remove/uninstall/update/list/config/auth
+{commands}
+  {app} install <source> [-l]     Install extension source and add to settings
+  {app} remove <source> [-l]      Remove extension source from settings
+  {app} uninstall <source> [-l]   Alias for remove
+  {app} update [source|self|pi]   Update pi, extensions, or model catalogs
+  {app} list                      List installed extensions from settings
+  {app} config [-l]               Open TUI to enable/disable package resources (Tab switches scope)
+  {app} auth <command>            Print credentials or check provider readiness
+  {app} <command> --help          Show help for install/remove/uninstall/update/list/config/auth`,
+		{
+			usage: chalk.bold(t("Usage:")),
+			app: APP_NAME,
+			commands: chalk.bold(t("Commands:")),
+		},
+	)}
 
-${chalk.bold("Options:")}
-  --provider <name>              Provider name (default: google)
+${chalk.bold(t("Options:"))}
+${t(`  --provider <name>              Provider name (default: google)
   --model <pattern>              Model pattern or ID (supports "provider/id" and optional ":<thinking>")
   --api-key <key>                API key (defaults to env vars)
   --system-prompt <text>         System prompt (default: coding assistant prompt)
@@ -318,74 +329,78 @@ ${chalk.bold("Options:")}
   --offline                      Disable startup network operations (same as PI_OFFLINE=1)
   --                             End option parsing; treat remaining arguments as messages/files
   --help, -h                     Show this help
-  --version, -v                  Show version number
+  --version, -v                  Show version number`)}
 
-Extensions can register additional flags (e.g., --plan from plan-mode extension).${extensionFlagsText}
+${t("Extensions can register additional flags (e.g., --plan from plan-mode extension).")}${extensionFlagsText}
 
-${chalk.bold("Examples:")}
-  # Print a provider API key for an external client
-  ${APP_NAME} auth print-api-key --provider openai
+${chalk.bold(t("Examples:"))}
+${t(
+	`  # Print a provider API key for an external client
+  {app} auth print-api-key --provider openai
 
   # Print an OAuth bearer token for an external client (refreshes if expired)
-  ${APP_NAME} auth print-bearer-token --provider openai-codex
+  {app} auth print-bearer-token --provider openai-codex
 
   # Interactive mode
-  ${APP_NAME}
+  {app}
 
   # Interactive mode with initial prompt
-  ${APP_NAME} "List all .ts files in src/"
+  {app} "List all .ts files in src/"
 
   # Include files in initial message
-  ${APP_NAME} @prompt.md @image.png "What color is the sky?"
+  {app} @prompt.md @image.png "What color is the sky?"
 
   # Non-interactive mode (process and exit)
-  ${APP_NAME} -p "List all .ts files in src/"
+  {app} -p "List all .ts files in src/"
 
   # Prompt beginning with a dash
-  ${APP_NAME} -p -- "- Summarize these points"
+  {app} -p -- "- Summarize these points"
 
   # Multiple messages (interactive)
-  ${APP_NAME} "Read package.json" "What dependencies do we have?"
+  {app} "Read package.json" "What dependencies do we have?"
 
   # Continue previous session
-  ${APP_NAME} --continue "What did we discuss?"
+  {app} --continue "What did we discuss?"
 
   # Start a named session
-  ${APP_NAME} --name "Refactor auth module"
+  {app} --name "Refactor auth module"
 
   # Use different model
-  ${APP_NAME} --provider openai --model gpt-4o-mini "Help me refactor this code"
+  {app} --provider openai --model gpt-4o-mini "Help me refactor this code"
 
   # Use model with provider prefix (no --provider needed)
-  ${APP_NAME} --model openai/gpt-4o "Help me refactor this code"
+  {app} --model openai/gpt-4o "Help me refactor this code"
 
   # Use model with thinking level shorthand
-  ${APP_NAME} --model sonnet:high "Solve this complex problem"
+  {app} --model sonnet:high "Solve this complex problem"
 
   # Limit model cycling to specific models
-  ${APP_NAME} --models claude-sonnet,claude-haiku,gpt-4o
+  {app} --models claude-sonnet,claude-haiku,gpt-4o
 
   # Limit to a specific provider with glob pattern
-  ${APP_NAME} --models "github-copilot/*"
+  {app} --models "github-copilot/*"
 
   # Cycle models with fixed thinking levels
-  ${APP_NAME} --models sonnet:high,haiku:low
+  {app} --models sonnet:high,haiku:low
 
   # Start with a specific thinking level
-  ${APP_NAME} --thinking high "Solve this complex problem"
+  {app} --thinking high "Solve this complex problem"
 
   # Read-only mode (no file modifications possible)
-  ${APP_NAME} --tools read,grep,find,ls -p "Review the code in src/"
+  {app} --tools read,grep,find,ls -p "Review the code in src/"
 
   # Disable one tool while keeping the rest available
-  ${APP_NAME} --exclude-tools ask_question
+  {app} --exclude-tools ask_question
 
   # Export a session file to HTML
-  ${APP_NAME} --export ~/${CONFIG_DIR_NAME}/agent/sessions/--path--/session.jsonl
-  ${APP_NAME} --export session.jsonl output.html
+  {app} --export ~/{configDir}/agent/sessions/--path--/session.jsonl
+  {app} --export session.jsonl output.html`,
+	{ app: APP_NAME, configDir: CONFIG_DIR_NAME },
+)}
 
-${chalk.bold("Environment Variables:")}
-  ANTHROPIC_AUTH_TOKEN             - Anthropic bearer auth token
+${chalk.bold(t("Environment Variables:"))}
+${t(
+	`  ANTHROPIC_AUTH_TOKEN             - Anthropic bearer auth token
   ANTHROPIC_API_KEY                - Anthropic Claude API key
   ANTHROPIC_OAUTH_TOKEN            - Anthropic OAuth token (alternative to API key)
   ANT_LING_API_KEY                 - Ant Ling API key
@@ -427,21 +442,27 @@ ${chalk.bold("Environment Variables:")}
   AWS_SECRET_ACCESS_KEY            - AWS secret key for Amazon Bedrock
   AWS_BEARER_TOKEN_BEDROCK         - Bedrock API key (bearer token)
   AWS_REGION                       - AWS region for Amazon Bedrock (e.g., us-east-1)
-  ${ENV_AGENT_DIR.padEnd(32)} - Config directory (default: ~/${CONFIG_DIR_NAME}/agent)
-  ${ENV_SESSION_DIR.padEnd(32)} - Session storage directory (overridden by --session-dir)
+  {envAgentDir} - Config directory (default: ~/{configDir}/agent)
+  {envSessionDir} - Session storage directory (overridden by --session-dir)
   PI_PACKAGE_DIR                   - Override package directory (for Nix/Guix store paths)
   PI_OFFLINE                       - Disable startup network operations when set to 1/true/yes
   PI_TELEMETRY                     - Override install telemetry when set to 1/true/yes or 0/false/no
-  PI_SHARE_VIEWER_URL              - Base URL for /share command (default: https://pi.dev/session/)
+  PI_SHARE_VIEWER_URL              - Base URL for /share command (default: https://pi.dev/session/)`,
+	{
+		envAgentDir: ENV_AGENT_DIR.padEnd(32),
+		envSessionDir: ENV_SESSION_DIR.padEnd(32),
+		configDir: CONFIG_DIR_NAME,
+	},
+)}
 
-${chalk.bold("Built-in Tool Names:")}
-  read       - Read file contents
+${chalk.bold(t("Built-in Tool Names:"))}
+${t(`  read       - Read file contents
   bash       - Execute bash commands
   powershell - Execute PowerShell commands on Windows
   edit       - Edit files with find/replace
   write      - Write files (creates/overwrites)
   grep       - Search file contents (read-only, off by default)
   find       - Find files by glob pattern (read-only, off by default)
-  ls         - List directory contents (read-only, off by default)
+  ls         - List directory contents (read-only, off by default)`)}
 `);
 }

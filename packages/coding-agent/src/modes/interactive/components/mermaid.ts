@@ -1,6 +1,7 @@
 import { Marked, type Token } from "@earendil-works/pi-tui";
 import { type MermaidArt, render, type Span } from "grok-mermaid";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
+import { t } from "../../../core/i18n.ts";
 import type { MermaidRenderingMode } from "../../../core/settings-manager.ts";
 import type { Theme } from "../theme/theme.ts";
 
@@ -75,8 +76,8 @@ export function createMermaidMarkdownTransformer(options: MermaidTransformerOpti
 				const art = render(token.text);
 				if (!art || art.width > context.availableWidth) return token.raw;
 				if (!context.isStreaming && art.warnings.length > 0) {
-					const suffix = art.warnings.length > 1 ? ` (+${art.warnings.length - 1} more)` : "";
-					const warning = `Mermaid diagram not rendered: ${art.warnings[0]}${suffix}`;
+					const suffix = art.warnings.length > 1 ? t(" (+{count} more)", { count: art.warnings.length - 1 }) : "";
+					const warning = t("Mermaid diagram not rendered: {warning}", { warning: `${art.warnings[0]}${suffix}` });
 					const styledWarning = options.theme ? options.theme.fg("warning", warning) : warning;
 					return `${token.raw}\n${codeSpan(styledWarning)}  \n`;
 				}

@@ -16,6 +16,7 @@ import {
 	visibleWidth,
 } from "@earendil-works/pi-tui";
 import { CONFIG_DIR_NAME } from "../../../config.ts";
+import { t } from "../../../core/i18n.ts";
 import type { PathMetadata, ResolvedPaths, ResolvedResource } from "../../../core/package-manager.ts";
 import type { PackageSource, SettingsManager } from "../../../core/settings-manager.ts";
 import { canonicalizePath, isLocalPath, resolvePath } from "../../../utils/paths.ts";
@@ -88,12 +89,14 @@ function getGroupLabel(metadata: PathMetadata, agentDir: string): string {
 	if (metadata.source === "auto") {
 		if (metadata.baseDir) {
 			return metadata.scope === "user"
-				? `User (${formatBaseDir(metadata.baseDir)})`
-				: `Project (${formatBaseDir(metadata.baseDir)})`;
+				? t("User ({dir})", { dir: formatBaseDir(metadata.baseDir) })
+				: t("Project ({dir})", { dir: formatBaseDir(metadata.baseDir) });
 		}
-		return metadata.scope === "user" ? `User (${formatBaseDir(agentDir)})` : `Project (${CONFIG_DIR_NAME}/)`;
+		return metadata.scope === "user"
+			? t("User ({dir})", { dir: formatBaseDir(agentDir) })
+			: t("Project ({dir})", { dir: `${CONFIG_DIR_NAME}/` });
 	}
-	return metadata.scope === "user" ? "User settings" : "Project settings";
+	return metadata.scope === "user" ? t("User settings") : t("Project settings");
 }
 
 function buildGroups(resolved: ResolvedPaths, agentDir: string): ResourceGroup[] {
@@ -122,7 +125,7 @@ function buildGroups(resolved: ResolvedPaths, agentDir: string): ResourceGroup[]
 			if (!subgroup) {
 				subgroup = {
 					type: resourceType,
-					label: RESOURCE_TYPE_LABELS[resourceType],
+					label: t(RESOURCE_TYPE_LABELS[resourceType]),
 					items: [],
 				};
 				group.subgroups.push(subgroup);
@@ -200,16 +203,21 @@ class ConfigSelectorHeader implements Component {
 	invalidate(): void {}
 
 	render(width: number): string[] {
-		const title = theme.bold(this.writeScope === "project" ? "Project Local Resources" : "Global Resources");
+		const title = theme.bold(this.writeScope === "project" ? t("Project Local Resources") : t("Global Resources"));
 		const sep = theme.fg("muted", " · ");
-		const switchHint = this.projectModeAvailable ? keyHint("tui.input.tab", "switch mode") + sep : "";
+		const switchHint = this.projectModeAvailable ? keyHint("tui.input.tab", t("switch mode")) + sep : "";
 		const actionHint =
-			this.writeScope === "project" ? rawKeyHint("space", "cycle inherit/+/-") : rawKeyHint("space", "toggle");
-		const hint = switchHint + actionHint + sep + rawKeyHint("esc", "close");
+			this.writeScope === "project" ? rawKeyHint("space", t("cycle inherit/+/-")) : rawKeyHint("space", t("toggle"));
+		const hint = switchHint + actionHint + sep + rawKeyHint("esc", t("close"));
 		const spacing = Math.max(1, width - visibleWidth(title) - visibleWidth(hint));
 		const scopeHint =
 			this.writeScope === "project"
-				? theme.fg("muted", `${CONFIG_DIR_NAME}/settings.json · inherited global resources are dimmed`)
+				? theme.fg(
+						"muted",
+						t("{configDir}/settings.json · inherited global resources are dimmed", {
+							configDir: CONFIG_DIR_NAME,
+						}),
+					)
 				: theme.fg("muted", `~/${CONFIG_DIR_NAME}/agent/settings.json`);
 
 		return [
@@ -397,7 +405,7 @@ class ResourceList implements Component, Focusable {
 		lines.push("");
 
 		if (this.filteredItems.length === 0) {
-			lines.push(theme.fg("muted", "  No resources found"));
+			lines.push(theme.fg("muted", t("  No resources found")));
 			return lines;
 		}
 
@@ -415,7 +423,7 @@ class ResourceList implements Component, Focusable {
 			if (entry.type === "group") {
 				// Main group header (no cursor)
 				const inherited = this.writeScope === "project" && entry.group.scope === "user";
-				const label = theme.bold(`${entry.group.label}${inherited ? " · inherited global" : ""}`);
+				const label = theme.bold(`${entry.group.label}${inherited ? t(" · inherited global") : ""}`);
 				const groupLine = theme.fg(inherited ? "dim" : "accent", label);
 				lines.push(truncateToWidth(`  ${groupLine}`, width, ""));
 			} else if (entry.type === "subgroup") {
@@ -649,9 +657,9 @@ class ResourceList implements Component, Focusable {
 	private getItemSuffix(item: ResourceItem): string {
 		if (this.writeScope !== "project") return "";
 		const state = this.getProjectOverrideState(item);
-		if (state === "load") return theme.fg("muted", "  project load");
-		if (state === "unload") return theme.fg("muted", "  project unload");
-		return this.isInheritedGlobalItem(item) ? theme.fg("dim", "  inherited global") : "";
+		if (state === "load") return theme.fg("muted", t("  project load"));
+		if (state === "unload") return theme.fg("muted", t("  project unload"));
+		return this.isInheritedGlobalItem(item) ? theme.fg("dim", t("  inherited global")) : "";
 	}
 
 	private isDimmedItem(item: ResourceItem): boolean {

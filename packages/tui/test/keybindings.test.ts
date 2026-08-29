@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { KeybindingsManager, TUI_KEYBINDINGS } from "../src/keybindings.ts";
+import { KeybindingsManager, setTranslations, TUI_KEYBINDINGS } from "../src/keybindings.ts";
 
 describe("KeybindingsManager", () => {
 	it("binds Ctrl+J as a default newline alias", () => {
@@ -77,5 +77,38 @@ describe("KeybindingsManager", () => {
 			},
 		]);
 		assert.deepStrictEqual(keybindings.getKeys("tui.editor.cursorLeft"), ["left", "ctrl+b"]);
+	});
+});
+
+describe("keybinding description translations", () => {
+	it("returns English descriptions when no translations are injected", () => {
+		setTranslations({});
+		const keybindings = new KeybindingsManager(TUI_KEYBINDINGS);
+
+		assert.strictEqual(keybindings.getDefinition("tui.editor.cursorUp").description, "Move cursor up");
+	});
+
+	it("returns injected translated descriptions", () => {
+		setTranslations({ "Move cursor up": "游標上移" });
+		const keybindings = new KeybindingsManager(TUI_KEYBINDINGS);
+
+		assert.strictEqual(keybindings.getDefinition("tui.editor.cursorUp").description, "游標上移");
+		assert.strictEqual(keybindings.getDefinition("tui.input.newLine").description, "Insert newline");
+	});
+
+	it("falls back to English for keys missing from the injected dictionary", () => {
+		setTranslations({});
+		setTranslations({ "Move cursor up": "游標上移" });
+		const keybindings = new KeybindingsManager(TUI_KEYBINDINGS);
+
+		assert.strictEqual(keybindings.getDefinition("tui.input.newLine").description, "Insert newline");
+	});
+
+	it("restores English descriptions when the dictionary is cleared", () => {
+		setTranslations({ "Move cursor up": "游標上移" });
+		setTranslations({});
+		const keybindings = new KeybindingsManager(TUI_KEYBINDINGS);
+
+		assert.strictEqual(keybindings.getDefinition("tui.editor.cursorUp").description, "Move cursor up");
 	});
 });

@@ -1,5 +1,6 @@
 import { type Component, Loader, type TUI } from "@earendil-works/pi-tui";
 import type { WorkingIndicatorOptions } from "../../../core/extensions/index.ts";
+import { t } from "../../../core/i18n.ts";
 import { theme } from "../theme/theme.ts";
 import { CountdownTimer } from "./countdown-timer.ts";
 import { keyText } from "./keybinding-hints.ts";
@@ -44,7 +45,12 @@ export class RetryStatusIndicator extends StatusIndicator {
 
 	constructor(ui: TUI, attempt: number, maxAttempts: number, delayMs: number) {
 		const retryMessage = (seconds: number) =>
-			`Retrying (${attempt}/${maxAttempts}) in ${seconds}s... (${keyText("app.interrupt")} to cancel)`;
+			t("Retrying ({attempt}/{maxAttempts}) in {seconds}s... ({key} to cancel)", {
+				attempt,
+				maxAttempts,
+				seconds,
+				key: keyText("app.interrupt"),
+			});
 		super(
 			"retry",
 			ui,
@@ -75,11 +81,12 @@ export type CompactionStatusReason = "manual" | "threshold" | "overflow";
 
 export class CompactionStatusIndicator extends StatusIndicator {
 	constructor(ui: TUI, reason: CompactionStatusReason) {
-		const cancelHint = `(${keyText("app.interrupt")} to cancel)`;
+		const cancelHint = t("({key} to cancel)", { key: keyText("app.interrupt") });
 		const label =
 			reason === "manual"
-				? `Compacting context... ${cancelHint}`
-				: `${reason === "overflow" ? "Context overflow detected, " : ""}Auto-compacting... ${cancelHint}`;
+				? t("Compacting context... {hint}", { hint: cancelHint })
+				: (reason === "overflow" ? t("Context overflow detected, ") : "") +
+					t("Auto-compacting... {hint}", { hint: cancelHint });
 		super(
 			"compaction",
 			ui,
@@ -97,7 +104,7 @@ export class BranchSummaryStatusIndicator extends StatusIndicator {
 			ui,
 			(spinner) => theme.fg("accent", spinner),
 			(text) => theme.fg("muted", text),
-			`Summarizing branch... (${keyText("app.interrupt")} to cancel)`,
+			t("Summarizing branch... ({key} to cancel)", { key: keyText("app.interrupt") }),
 		);
 	}
 }

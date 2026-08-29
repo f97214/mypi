@@ -1,4 +1,5 @@
 import { Box, Markdown, type MarkdownTheme, Spacer, Text } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import type { BranchSummaryMessage } from "../../../core/messages.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { keyText } from "./keybinding-hints.ts";
@@ -32,12 +33,12 @@ export class BranchSummaryMessageComponent extends Box {
 	private updateDisplay(): void {
 		this.clear();
 
-		const label = theme.fg("customMessageLabel", `\x1b[1m[branch]\x1b[22m`);
+		const label = theme.fg("customMessageLabel", `\x1b[1m${t("[branch]")}\x1b[22m`);
 		this.addChild(new Text(label, 0, 0));
 		this.addChild(new Spacer(1));
 
 		if (this.expanded) {
-			const header = "**Branch Summary**\n\n";
+			const header = `${t("**Branch Summary**")}\n\n`;
 			this.addChild(
 				new Markdown(header + this.message.summary, 0, 0, this.markdownTheme, {
 					color: (text: string) => theme.fg("customMessageText", text),
@@ -46,9 +47,9 @@ export class BranchSummaryMessageComponent extends Box {
 		} else {
 			this.addChild(
 				new Text(
-					theme.fg("customMessageText", "Branch summary (") +
+					theme.fg("customMessageText", t("Branch summary (")) +
 						theme.fg("dim", keyText("app.tools.expand")) +
-						theme.fg("customMessageText", " to expand)"),
+						theme.fg("customMessageText", t(" to expand)")),
 					0,
 					0,
 				),

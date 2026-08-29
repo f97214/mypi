@@ -10,6 +10,7 @@ import {
 	Spacer,
 	Text,
 } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import { getModelSearchText } from "../model-search.ts";
 import { theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
@@ -129,9 +130,13 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
 		// Header
 		this.addChild(new DynamicBorder());
 		this.addChild(new Spacer(1));
-		this.addChild(new Text(theme.fg("accent", theme.bold("Model Configuration")), 0, 0));
+		this.addChild(new Text(theme.fg("accent", theme.bold(t("Model Configuration"))), 0, 0));
 		this.addChild(
-			new Text(theme.fg("muted", `Session-only. ${keyText("app.models.save")} to save to settings.`), 0, 0),
+			new Text(
+				theme.fg("muted", t("Session-only. {key} to save to settings.", { key: keyText("app.models.save") })),
+				0,
+				0,
+			),
 		);
 		this.addChild(new Spacer(1));
 
@@ -192,19 +197,25 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
 		const unavailableCount = this.enabledIds?.filter((id) => !this.modelsById.has(id)).length ?? 0;
 		const allEnabled = this.enabledIds === null;
 		const countText = allEnabled
-			? "all enabled"
-			: `${enabledCount}/${this.allIds.length} enabled${unavailableCount ? ` · ${unavailableCount} unavailable` : ""}`;
+			? t("all enabled")
+			: unavailableCount
+				? t("{enabled}/{total} enabled · {unavailable} unavailable", {
+						enabled: enabledCount,
+						total: this.allIds.length,
+						unavailable: unavailableCount,
+					})
+				: t("{enabled}/{total} enabled", { enabled: enabledCount, total: this.allIds.length });
 		const parts = [
-			`${keyText("tui.select.confirm")} toggle`,
-			`${keyText("app.models.enableAll")} all`,
-			`${keyText("app.models.clearAll")} clear`,
-			`${keyText("app.models.toggleProvider")} provider`,
-			`${keyText("app.models.reorderUp")}/${keyText("app.models.reorderDown")} reorder`,
-			`${keyText("app.models.save")} save`,
+			`${keyText("tui.select.confirm")} ${t("toggle")}`,
+			`${keyText("app.models.enableAll")} ${t("all")}`,
+			`${keyText("app.models.clearAll")} ${t("clear")}`,
+			`${keyText("app.models.toggleProvider")} ${t("provider")}`,
+			`${keyText("app.models.reorderUp")}/${keyText("app.models.reorderDown")} ${t("reorder")}`,
+			`${keyText("app.models.save")} ${t("save")}`,
 			countText,
 		];
 		return this.isDirty
-			? theme.fg("dim", `  ${parts.join(" · ")} `) + theme.fg("warning", "(unsaved)")
+			? theme.fg("dim", `  ${parts.join(" · ")} `) + theme.fg("warning", t("(unsaved)"))
 			: theme.fg("dim", `  ${parts.join(" · ")}`);
 	}
 
@@ -231,7 +242,7 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
 		this.listContainer.clear();
 
 		if (this.filteredItems.length === 0) {
-			this.listContainer.addChild(new Text(theme.fg("muted", "  No matching models"), 0, 0));
+			this.listContainer.addChild(new Text(theme.fg("muted", t("  No matching models")), 0, 0));
 			return;
 		}
 
@@ -248,7 +259,7 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
 			const prefix = isSelected ? theme.fg("accent", "→ ") : "  ";
 			const id = item.model?.id ?? item.fullId;
 			const modelText = isSelected ? theme.fg("accent", id) : id;
-			const providerBadge = theme.fg("muted", item.model ? ` [${item.model.provider}]` : " [unavailable]");
+			const providerBadge = theme.fg("muted", item.model ? ` [${item.model.provider}]` : t(" [unavailable]"));
 			const status = item.model
 				? allEnabled
 					? ""
@@ -271,7 +282,10 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
 			this.listContainer.addChild(new Spacer(1));
 			this.listContainer.addChild(
 				new Text(
-					theme.fg("muted", `  ${selected.model ? `Model Name: ${selected.model.name}` : "Model unavailable"}`),
+					theme.fg(
+						"muted",
+						`  ${selected.model ? t("Model Name: {name}", { name: selected.model.name }) : t("Model unavailable")}`,
+					),
 					0,
 					0,
 				),

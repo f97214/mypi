@@ -42,3 +42,11 @@ plans/
 .pi/hf-sessions/
 .pi/hf-sessions-backup/
 collect.sh
+.spectra/
+openspec/.vector-search.db*
+# >>> Managed by init-project-docs >>>
+/.claude/
+/.agents/
+/.codex/
+/.ai/
+# <<< Managed by init-project-docs <<<

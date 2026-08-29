@@ -1,6 +1,7 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import { Container, Markdown, type MarkdownTheme, Spacer, Text } from "@earendil-works/pi-tui";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
+import { t } from "../../../core/i18n.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { createMarkdownTransform } from "./markdown-transform.ts";
 
@@ -26,7 +27,7 @@ export class AssistantMessageComponent extends Container {
 		message?: AssistantMessage,
 		hideThinkingBlock = false,
 		markdownTheme: MarkdownTheme = getMarkdownTheme(),
-		hiddenThinkingLabel = "Thinking...",
+		hiddenThinkingLabel = t("Thinking..."),
 		outputPad = 1,
 		markdownTransformers: readonly MarkdownTransformer[] = [],
 	) {
@@ -177,20 +178,22 @@ export class AssistantMessageComponent extends Container {
 		if (message.stopReason === "length") {
 			this.contentContainer.addChild(new Spacer(1));
 			this.contentContainer.addChild(
-				new Text(theme.fg("error", "Response was truncated before completion."), this.outputPad, 0),
+				new Text(theme.fg("error", t("Response was truncated before completion.")), this.outputPad, 0),
 			);
 		} else if (!hasToolCalls) {
 			if (message.stopReason === "aborted") {
 				const abortMessage =
 					message.errorMessage && message.errorMessage !== "Request was aborted"
 						? message.errorMessage
-						: "Operation aborted";
+						: t("Operation aborted");
 				this.contentContainer.addChild(new Spacer(1));
 				this.contentContainer.addChild(new Text(theme.fg("error", abortMessage), this.outputPad, 0));
 			} else if (message.stopReason === "error") {
-				const errorMsg = message.errorMessage || "Unknown error";
+				const errorMsg = message.errorMessage || t("Unknown error");
 				this.contentContainer.addChild(new Spacer(1));
-				this.contentContainer.addChild(new Text(theme.fg("error", `Error: ${errorMsg}`), this.outputPad, 0));
+				this.contentContainer.addChild(
+					new Text(theme.fg("error", t("Error: {msg}", { msg: errorMsg })), this.outputPad, 0),
+				);
 			}
 		}
 	}

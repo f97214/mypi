@@ -3,6 +3,7 @@
  */
 
 import { Container, Loader, Spacer, Text, type TUI } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import {
 	DEFAULT_MAX_BYTES,
 	DEFAULT_MAX_LINES,
@@ -56,7 +57,7 @@ export class BashExecutionComponent extends Container {
 			ui,
 			(spinner) => theme.fg(colorKey, spinner),
 			(text) => theme.fg("muted", text),
-			`Running... (${keyText("tui.select.cancel")} to cancel)`, // Plain text for loader
+			t("Running... ({key} to cancel)", { key: keyText("tui.select.cancel") }), // Plain text for loader
 		);
 		this.contentContainer.addChild(this.loader);
 
@@ -177,25 +178,27 @@ export class BashExecutionComponent extends Container {
 			if (hiddenLineCount > 0) {
 				if (this.expanded) {
 					statusParts.push(
-						`${theme.fg("muted", "(")}${keyHint("app.tools.expand", "to collapse")}${theme.fg("muted", ")")}`,
+						`${theme.fg("muted", "(")}${keyHint("app.tools.expand", t("to collapse"))}${theme.fg("muted", ")")}`,
 					);
 				} else {
 					statusParts.push(
-						`${theme.fg("muted", `... ${hiddenLineCount} more lines (`)}${keyHint("app.tools.expand", "to expand")}${theme.fg("muted", ")")}`,
+						`${theme.fg("muted", t("... {count} more lines (", { count: hiddenLineCount }))}${keyHint("app.tools.expand", t("to expand"))}${theme.fg("muted", ")")}`,
 					);
 				}
 			}
 
 			if (this.status === "cancelled") {
-				statusParts.push(theme.fg("warning", "(cancelled)"));
+				statusParts.push(theme.fg("warning", t("(cancelled)")));
 			} else if (this.status === "error") {
-				statusParts.push(theme.fg("error", `(exit ${this.exitCode})`));
+				statusParts.push(theme.fg("error", t("(exit {code})", { code: String(this.exitCode) })));
 			}
 
 			// Add truncation warning (context truncation, not preview truncation)
 			const wasTruncated = this.truncationResult?.truncated || contextTruncation.truncated;
 			if (wasTruncated && this.fullOutputPath) {
-				statusParts.push(theme.fg("warning", `Output truncated. Full output: ${this.fullOutputPath}`));
+				statusParts.push(
+					theme.fg("warning", t("Output truncated. Full output: {path}", { path: this.fullOutputPath })),
+				);
 			}
 
 			if (statusParts.length > 0) {

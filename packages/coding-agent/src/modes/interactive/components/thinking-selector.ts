@@ -12,6 +12,7 @@ import {
 	Spacer,
 	Text,
 } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import { getSelectListTheme, theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 import { keyDisplayText } from "./keybinding-hints.ts";
@@ -70,15 +71,19 @@ export class ThinkingSelectorComponent extends Container implements Focusable {
 			value: level,
 			label: level,
 			description:
-				level === defaultThinkingLevel ? `${LEVEL_DESCRIPTIONS[level]} · default` : LEVEL_DESCRIPTIONS[level],
+				level === defaultThinkingLevel
+					? `${t(LEVEL_DESCRIPTIONS[level])}${t(" · default")}`
+					: t(LEVEL_DESCRIPTIONS[level]),
 		}));
 
 		// Add top border
 		this.addChild(new DynamicBorder());
 		this.addChild(new Spacer(1));
-		this.addChild(new Text("Thinking Level", 0, 0));
+		this.addChild(new Text(t("Thinking Level"), 0, 0));
 		this.addChild(new Spacer(1));
-		this.addChild(new Text(`${keyDisplayText("app.thinking.cycle")} cycles thinking levels in-session`, 0, 0));
+		this.addChild(
+			new Text(t("{key} cycles thinking levels in-session", { key: keyDisplayText("app.thinking.cycle") }), 0, 0),
+		);
 		this.addChild(new Spacer(1));
 
 		this.searchInput = new Input();
@@ -91,7 +96,7 @@ export class ThinkingSelectorComponent extends Container implements Focusable {
 		this.selectListChildIndex = this.children.length;
 		this.addChild(this.selectList);
 		this.addChild(new Spacer(1));
-		this.addChild(new Text(theme.fg("dim", "  Enter to select · Ctrl+S to set as default · Esc to cancel"), 0, 0));
+		this.addChild(new Text(theme.fg("dim", t("  Enter to select · Ctrl+S to set as default · Esc to cancel")), 0, 0));
 
 		// Add bottom border
 		this.addChild(new DynamicBorder());

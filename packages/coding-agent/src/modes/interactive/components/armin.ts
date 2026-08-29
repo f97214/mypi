@@ -3,6 +3,7 @@
  */
 
 import type { Component, TUI } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import { theme } from "../theme/theme.ts";
 
 // XBM image: 31x36 pixels, LSB first, 1=background, 0=foreground
@@ -99,7 +100,7 @@ export class ArminComponent implements Component {
 		});
 
 		// Add "ARMIN SAYS HI" at the end
-		const message = "ARMIN SAYS HI";
+		const message = t("ARMIN SAYS HI");
 		const msgPadRight = Math.max(0, width - padding - message.length);
 		this.cachedLines.push(` ${theme.fg("accent", message)}${" ".repeat(msgPadRight)}`);
 

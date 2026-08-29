@@ -3,6 +3,7 @@
  */
 
 import { Container, type Focusable, getKeybindings, Input, Spacer, Text, type TUI } from "@earendil-works/pi-tui";
+import { t } from "../../../core/i18n.ts";
 import { theme } from "../theme/theme.ts";
 import { CountdownTimer } from "./countdown-timer.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
@@ -55,7 +56,10 @@ export class ExtensionInputComponent extends Container implements Focusable {
 			this.countdown = new CountdownTimer(
 				opts.timeout,
 				opts.tui,
-				(s) => this.titleText.setText(theme.fg("accent", `${this.baseTitle} (${s}s)`)),
+				(s) =>
+					this.titleText.setText(
+						theme.fg("accent", t("{title} ({seconds}s)", { title: this.baseTitle, seconds: s })),
+					),
 				() => this.onCancelCallback(),
 			);
 		}
@@ -64,7 +68,7 @@ export class ExtensionInputComponent extends Container implements Focusable {
 		this.addChild(this.input);
 		this.addChild(new Spacer(1));
 		this.addChild(
-			new Text(`${keyHint("tui.select.confirm", "submit")}  ${keyHint("tui.select.cancel", "cancel")}`, 1, 0),
+			new Text(`${keyHint("tui.select.confirm", t("submit"))}  ${keyHint("tui.select.cancel", t("cancel"))}`, 1, 0),
 		);
 		this.addChild(new Spacer(1));
 		this.addChild(new DynamicBorder());
